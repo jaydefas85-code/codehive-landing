@@ -1,0 +1,1 @@
+var e=`__codehiveSweepDriver`,t=globalThis[e]??(globalThis[e]={sweep:0,ringT:99,guardCenter:0,guardHalf:.55,guardMin:.42});function n(){t.ringT=0}export{n,t};
