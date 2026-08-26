@@ -1,0 +1,53 @@
+# Déploiement GitHub Pages de la landing CodeHive.
+#
+# `configure-pages` avec `enablement: true` tente d'activer Pages au premier run.
+# Mesuré le 2026-07-27 sur un repo perso neuf : le GITHUB_TOKEN n'y arrive PAS —
+#   "Create Pages site failed. Error: Resource not accessible by integration"
+# — et ce, malgré les permissions `pages: write` / `id-token: write` ci-dessous.
+# Il faut donc une activation manuelle, UNE seule fois :
+#   Settings → Pages → Build and deployment → Source : GitHub Actions
+# Ensuite ce workflow tourne seul à chaque push sur main.
+#
+# Le site est un unique index.html sans build : on publie la racine telle quelle.
+name: Deploy landing to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois ; on ne coupe pas un déploiement en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages (l'active si besoin)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Sans ce fichier, Pages passe le site dans Jekyll et ignore tout dossier
+      # commençant par un underscore. Le site est statique pur, on court-circuite.
+      - name: Bypass Jekyll
+        run: touch .nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
